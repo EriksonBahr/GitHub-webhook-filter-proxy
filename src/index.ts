@@ -5,7 +5,12 @@ import {
   GitHubEventName,
   verifyGitHubWebhookSignature,
 } from "./github";
-import { MSTeamsWebhook, PotentialAction, Section, Target } from "./model/msteams";
+import {
+  MSTeamsWebhook,
+  PotentialAction,
+  Section,
+  Target,
+} from "./model/msteams";
 import { templatePathParser } from "./templatePathParser";
 
 // A HTTP status code this worker may include in its responses.
@@ -44,8 +49,6 @@ type Settings = {
   MS_TEAMS_ACTION_NAME: string;
   MS_TEAMS_ACTION_URL: string;
 };
-
-const regex = /\|(.*?)\|/g; // Regular expression to match text between pipes
 
 export default {
   async fetch(request: Request, env: Settings): Promise<Response> {
@@ -170,12 +173,21 @@ export default {
       const msTeamsPayload = {
         "@type": "MessageCard",
         themeColor: "0076D7",
-        summary: templatePathParser(eventBody, env.MS_TEAMS_SUMMARY_TEMPLATE_PATH),
+        summary: templatePathParser(
+          eventBody,
+          env.MS_TEAMS_SUMMARY_TEMPLATE_PATH,
+        ),
         sections: [
           {
-            activityTitle: templatePathParser(eventBody, env.MS_TEAMS_TITLE_TEMPLATE_PATH),
-            activitySubtitle: templatePathParser(eventBody, env.MS_TEAMS_SUBTITLE_TEMPLATE_PATH),
-          }
+            activityTitle: templatePathParser(
+              eventBody,
+              env.MS_TEAMS_TITLE_TEMPLATE_PATH,
+            ),
+            activitySubtitle: templatePathParser(
+              eventBody,
+              env.MS_TEAMS_SUBTITLE_TEMPLATE_PATH,
+            ),
+          },
         ] as Section[],
         potentialAction: [
           {
@@ -184,12 +196,12 @@ export default {
             targets: [
               {
                 os: "default",
-                uri: env.MS_TEAMS_ACTION_URL
-              }
-            ] as Target[]
-          }
-        ] as PotentialAction[]
-      } as MSTeamsWebhook
+                uri: env.MS_TEAMS_ACTION_URL,
+              },
+            ] as Target[],
+          },
+        ] as PotentialAction[],
+      } as MSTeamsWebhook;
       // Relay the request we've received as-is, barring some additional headers added by Cloudflare
       try {
         return await fetch(
