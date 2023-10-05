@@ -5,6 +5,8 @@ import {
   GitHubEventName,
   verifyGitHubWebhookSignature,
 } from "./github";
+import { MSTeamsWebhook, PotentialAction, Section, Target } from "./model/msteams";
+import { templatePathParser } from "./templatePathParser";
 
 // A HTTP status code this worker may include in its responses.
 enum ResponseCode {
@@ -35,7 +37,15 @@ type Settings = {
   SECRET_TOKEN: string;
   TARGET_URL: string;
   UNMATCHED_EVENT_ACTION?: EventAction;
+  ADAPT_TO_MS_TEAMS_WEBHOOK: boolean;
+  MS_TEAMS_SUMMARY_TEMPLATE_PATH: string;
+  MS_TEAMS_TITLE_TEMPLATE_PATH: string;
+  MS_TEAMS_SUBTITLE_TEMPLATE_PATH: string;
+  MS_TEAMS_ACTION_NAME: string;
+  MS_TEAMS_ACTION_URL: string;
 };
+
+const regex = /\|(.*?)\|/g; // Regular expression to match text between pipes
 
 export default {
   async fetch(request: Request, env: Settings): Promise<Response> {
@@ -157,13 +167,36 @@ export default {
     }
 
     if (eventAction === "relay") {
+      const msTeamsPayload = {
+        "@type": "MessageCard",
+        themeColor: "0076D7",
+        summary: templatePathParser(eventBody, env.MS_TEAMS_SUMMARY_TEMPLATE_PATH),
+        sections: [
+          {
+            activityTitle: templatePathParser(eventBody, env.MS_TEAMS_TITLE_TEMPLATE_PATH),
+            activitySubtitle: templatePathParser(eventBody, env.MS_TEAMS_SUBTITLE_TEMPLATE_PATH),
+          }
+        ] as Section[],
+        potentialAction: [
+          {
+            "@type": "OpenUri",
+            name: env.MS_TEAMS_ACTION_NAME,
+            targets: [
+              {
+                os: "default",
+                uri: env.MS_TEAMS_ACTION_URL
+              }
+            ] as Target[]
+          }
+        ] as PotentialAction[]
+      } as MSTeamsWebhook
       // Relay the request we've received as-is, barring some additional headers added by Cloudflare
       try {
         return await fetch(
           new Request(env.TARGET_URL, {
             method: request.method,
             headers: request.headers,
-            body: requestBody,
+            body: JSON.stringify(msTeamsPayload),
           }),
         );
       } catch (e) {
