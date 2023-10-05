@@ -47,7 +47,7 @@ type Settings = {
   MS_TEAMS_TITLE_TEMPLATE_PATH: string;
   MS_TEAMS_SUBTITLE_TEMPLATE_PATH: string;
   MS_TEAMS_ACTION_NAME: string;
-  MS_TEAMS_ACTION_URL: string;
+  MS_TEAMS_ACTION_TEMPLATE_URL: string;
 };
 
 export default {
@@ -196,7 +196,10 @@ export default {
             targets: [
               {
                 os: "default",
-                uri: env.MS_TEAMS_ACTION_URL,
+                uri: templatePathParser(
+                  eventBody,
+                  env.MS_TEAMS_ACTION_TEMPLATE_URL,
+                ),
               },
             ] as Target[],
           },
